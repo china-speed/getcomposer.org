@@ -29,28 +29,10 @@ pipeline {
     stage('部署') {
       steps {
         echo '部署中...'
-        sh 'wget http://devtools.qiniu.com/qshell-linux-x64-v2.4.0.zip && unzip qshell-linux-x64-v2.4.0.zip'
-        sh 'mv ./qshell-linux-x64-v2.4.0 /usr/local/bin/qshell'
-        sh "qshell account $QINIU_ACCESSKEY $QINIU_SECRETKEY user1"
-        sh 'mkdir -p upload && cp web/installer web/favicon.ico upload/'
-        script {
-          writeFile(
-            file: 'upload.conf',
-            text: """
-            {
-              "src_dir" : "${env.WORKSPACE}/upload/",
-              "ignore_dir" : true,
-              "overwrite" : true,
-              "bucket" : "$QINIU_BUCKET"
-            }
-            """
-          )
-        }
-
-        sh "qshell qupload ${env.WORKSPACE}/upload.conf"
-        sh 'echo http://getcomposer.org.mirrors.china-speed.org.cn/installer > torefresh.txt'
-        sh 'echo http://getcomposer.org.mirrors.china-speed.org.cn/favicon.ico > torefresh.txt'
-        sh 'qshell cdnrefresh -i torefresh.txt'
+        sh 'apt-get update && apt-get install -y python3-pip'
+        sh 'pip3 install coscmd'
+        sh "coscmd config -a $TENCENT_SECRET_ID -s $TENCENT_SECRET_KEY -b $TENCENT_BUCKET -r $TENCENT_REGION"
+        sh 'coscmd upload web/installer /'
         echo '部署完成'
       }
     }
